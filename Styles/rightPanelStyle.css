@@ -1,6 +1,6 @@
 /* Right Panel Styling */
 .right-panel {
-    width: 200px;
+    width: 150px;
     background-color: #333;
     color: white;
     padding: 20px;
@@ -12,7 +12,7 @@
 
 /* Centered Title Styling */
 .center-title {
-    font-size: 18px;
+    font-size: 13px;
     font-weight: bold;
     color: #fff;
     margin-bottom: 20px;
@@ -52,4 +52,23 @@
     position: absolute;
     bottom: 0;
     border-radius: 10px;
+}
+/* Adjusted Marker Styling */
+.slider-marker {
+    position: absolute;
+    width: 8px; /* Length of each marker line */
+    height: 2px; /* Thickness of each marker line */
+    background-color: white;
+    left: -10px; /* Position the left marker line slightly to the left */
+    /* Shift each marker down by 10px */
+}
+
+.slider-marker::after {
+    content: '';
+    position: absolute;
+    width: 8px; /* Length of the second marker line */
+    height: 2px;
+    background-color: white;
+    right: -30px; /* Position the right marker line slightly to the right */
+    
 }

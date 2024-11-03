@@ -25,6 +25,20 @@ function showEdgeThicknessSlider() {
     sliderTrack.className = 'slider-track';
     sliderContainer.appendChild(sliderTrack);
 
+ const firstMarkerOffset = 10; // Starting position of the first marker, 10px from the top
+const totalMarkers = 10;
+const thumbHeight = 10; // Adjust based on half the thumb's total height
+
+for (let i = 0; i < totalMarkers; i++) {
+    const marker = document.createElement('div');
+    marker.className = 'slider-marker';
+
+    // Calculate marker position with the first marker at 10px from the top and evenly spaced down
+    const markerPosition = `calc(${firstMarkerOffset}px + ${(i / (totalMarkers - 1)) * (100 - firstMarkerOffset + 5.5)}%)`;
+    marker.style.top = markerPosition;
+
+    sliderTrack.appendChild(marker);
+}
     // Create the green progress element
     const sliderProgress = document.createElement('div');
     sliderProgress.className = 'slider-progress';
@@ -44,30 +58,14 @@ function showEdgeThicknessSlider() {
     valueDisplay.id = 'edgeThicknessValue';
     rightPanel.appendChild(valueDisplay);
 
-    // Set initial value
+    // Initial value
     let initialValue = 1;
-    let isDragging = false;
-
-    // Update display with initial value
     updateSliderValue(initialValue);
 
-    // Function to update the slider value display and position
-    function updateSliderValue(value) {
-        const sliderRect = sliderTrack.getBoundingClientRect();
-        const maxTop = sliderRect.height - sliderThumb.offsetHeight;
-        const newTop = ((value - 1) / 9) * maxTop;
+    // Handle dragging of the slider thumb
+    let isDragging = false;
 
-        // Set the initial thumb and progress positions
-        sliderThumb.style.top = `${newTop}px`;
-        sliderProgress.style.height = `${newTop + sliderThumb.offsetHeight / 2}px`;
-        sliderProgress.style.top = "0px";
-
-        // Display value in pixels
-        valueDisplay.textContent = `${value}px`;
-    }
-
-    // Event listener to start dragging
-    sliderThumb.addEventListener('mousedown', (event) => {
+    sliderThumb.addEventListener('mousedown', () => {
         isDragging = true;
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
@@ -75,21 +73,19 @@ function showEdgeThicknessSlider() {
 
     function onMouseMove(event) {
         if (isDragging) {
-            // Calculate the new position of the slider thumb
             const sliderRect = sliderTrack.getBoundingClientRect();
             let newTop = event.clientY - sliderRect.top;
 
-            // Constrain the thumb position within the track bounds
+            // Constrain to bounds and calculate nearest snap point
             newTop = Math.max(0, Math.min(newTop, sliderRect.height - sliderThumb.offsetHeight));
+            const snapValue = Math.round((newTop / (sliderRect.height - sliderThumb.offsetHeight)) * 9) + 1;
+            const snapTop = ((snapValue - 1) / 9) * (sliderRect.height - sliderThumb.offsetHeight);
 
-            // Calculate the slider value in the range 1 to 10 based on thumb position
-            const sliderValue = Math.round((newTop / (sliderRect.height - sliderThumb.offsetHeight)) * 9) + 1;
-
-            // Update thumb position, progress, and display
-            sliderThumb.style.top = `${newTop}px`;
-            sliderProgress.style.height = `${newTop + sliderThumb.offsetHeight / 2}px`;
+            // Update thumb, progress, and value display
+            sliderThumb.style.top = `${snapTop}px`;
+            sliderProgress.style.height = `${snapTop + sliderThumb.offsetHeight / 2}px`;
             sliderProgress.style.top = "0px";
-            valueDisplay.textContent = `${sliderValue}px`;  // Display in pixels
+            valueDisplay.textContent = `${snapValue}px`;
         }
     }
 
@@ -97,6 +93,17 @@ function showEdgeThicknessSlider() {
         isDragging = false;
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
+    }
+
+    function updateSliderValue(value) {
+        const sliderRect = sliderTrack.getBoundingClientRect();
+        const maxTop = sliderRect.height - sliderThumb.offsetHeight;
+        const newTop = ((value - 1) / 9) * maxTop;
+
+        sliderThumb.style.top = `${newTop}px`;
+        sliderProgress.style.height = `${newTop + sliderThumb.offsetHeight / 2}px`;
+        sliderProgress.style.top = "0px";
+        valueDisplay.textContent = `${value}px`;
     }
 }
 
