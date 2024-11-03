@@ -1,0 +1,55 @@
+/* Right Panel Styling */
+.right-panel {
+    width: 200px;
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: -4px 0px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Centered Title Styling */
+.center-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Custom Vertical Slider */
+.custom-vertical-slider {
+    height: calc(100vh - 100px); /* Stretch to fit available height */
+    width: 20px;
+    position: relative;
+    margin: 20px 0;
+}
+
+.slider-track {
+    width: 100%;
+    height: 100%;
+    background-color: #888;
+    position: relative;
+    border-radius: 10px;
+}
+
+.slider-thumb {
+    width: 20px;
+    height: 20px;
+    background-color: #555;
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    cursor: pointer;
+}
+
+.slider-progress {
+    width: 100%;
+    height: 0; /* Start with no height */
+    background-color: #00ff00; /* Green color for the filled portion */
+    position: absolute;
+    bottom: 0;
+    border-radius: 10px;
+}

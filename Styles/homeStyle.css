@@ -1,0 +1,139 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    flex-direction: row; /* Align sidebar and content side-by-side */
+}
+
+/* Title Bar Styling */
+/* Title Bar Styling */
+/* Title Bar Styling */
+.title-bar {
+    position: fixed;
+    top: 20px; /* Adjust to move it down slightly if needed */
+    right: 20px;
+    background-color: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000; /* Ensure it stays above other elements */
+    text-align: center;
+}
+
+/* Main Content Area Styling */
+.content {
+    flex: 1;
+    background-color: #f0f0f0; /* Light gray background */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
+
+/* Centered Title Styling */
+.center-title {
+    background-color: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 24px; /* Adjust font size as needed */
+    font-weight: bold;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+
+/* Sidebar styling */
+.sidebar {
+    background-color: #333;
+    width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    height: 100%;
+    box-shadow: 4px 0px 10px rgba(0, 0, 0, 0.3); /* Shadow for sidebar */
+}
+
+
+.icon-button {
+    background-color: #bfbfbf; /* Button background color */
+    color: #333; /* Text color */
+    border: none;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 80px;
+    cursor: pointer;
+    box-shadow: 0px 4px 8px rgba(224, 224, 224, 0.2); /* Shadow for button */
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+/* Hover effect to lift the button */
+.icon-button:hover {
+    background-color: rgb(199, 249, 255); /* Change background color on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+    box-shadow: 0px 8px 12px rgba(190, 255, 247, 0.3); /* Enhanced shadow on hover */
+}
+
+.icon-button img {
+    width: 32px; /* Adjust as needed */
+    height: 32px;
+    margin-bottom: 5px;
+}
+
+/* Hidden buttons */
+.hidden {
+    visibility: hidden; /* Use visibility instead of display */
+    opacity: 0;
+}
+
+.icon-button.fade-in {
+    visibility: visible; /* Make the button visible */
+    opacity: 0; /* Start faded out */
+    animation: fadeIn 0.5s forwards; /* Fade-in animation */
+}
+
+/* Keyframes for fadeIn */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Main content area */
+.content {
+    flex: 1;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Main display area */
+.main-display {
+    width: 80%;
+    height: 80%;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    margin-top: 20px;
+}
