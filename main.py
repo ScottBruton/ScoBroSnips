@@ -3,15 +3,19 @@ import threading
 import http.server
 import socketserver
 import os
-import win32api
-import win32con
-import win32gui
-import ctypes
+import wx
+import wx.adv
+import traceback
 from PIL import Image
 
 # Automatically find the directory where this script is located
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DIRECTORY = BASE_DIR  # Path to SCOBROSNIPS folder
+try:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DIRECTORY = BASE_DIR  # Path to SCOBROSNIPS folder
+except Exception as e:
+    print("Error determining base directory:", e)
+    traceback.print_exc()
+    exit(1)
 
 # Set the port for the local server
 PORT = 8000
@@ -25,116 +29,181 @@ class API:
         self.minimizedToTray = True  # Start minimized by default
 
     def my_python_function(self, value):
-        print(f"Python function called with value: {value}")
-        return f"Hello from Python! Received value: {value}"
+        try:
+            print(f"Python function called with value: {value}")
+            return f"Hello from Python! Received value: {value}"
+        except Exception as e:
+            print("Error in my_python_function:", e)
+            traceback.print_exc()
 
     def set_minimized_state(self, minimized):
         """Updates the minimizedToTray state."""
-        self.minimizedToTray = minimized
+        try:
+            self.minimizedToTray = minimized
+        except Exception as e:
+            print("Error setting minimized state:", e)
+            traceback.print_exc()
 
     def get_minimized_state(self):
         """Returns the current minimized state."""
-        return self.minimizedToTray
+        try:
+            return self.minimizedToTray
+        except Exception as e:
+            print("Error getting minimized state:", e)
+            traceback.print_exc()
+            return True
 
 api = API()
 
 # Function to start a local server
 def start_server():
-    if not os.path.exists(DIRECTORY):
-        print(f"Directory '{DIRECTORY}' does not exist. Please check the path.")
-        exit(1)
+    try:
+        if not os.path.exists(DIRECTORY):
+            print(f"Directory '{DIRECTORY}' does not exist. Please check the path.")
+            exit(1)
 
-    os.chdir(DIRECTORY)
-    handler = http.server.SimpleHTTPRequestHandler
-    httpd = socketserver.TCPServer(("", PORT), handler)
-    print(f"Serving at port {PORT}")
-    httpd.serve_forever()
+        os.chdir(DIRECTORY)
+        handler = http.server.SimpleHTTPRequestHandler
+        httpd = socketserver.TCPServer(("", PORT), handler)
+        print(f"Serving at port {PORT}")
+        httpd.serve_forever()
+    except Exception as e:
+        print("Error starting local server:", e)
+        traceback.print_exc()
+        exit(1)
 
 # Initialize the PyWebView window
 window = None
 
 def create_window():
     global window
-    window = webview.create_window(
-        'ScoBro Snips', f'http://localhost:{PORT}/home.html',
-        js_api=api, width=800, height=600, hidden=True  # Start hidden
-    )
+    try:
+        window = webview.create_window(
+            'ScoBro Snips', f'http://localhost:{PORT}/home.html',
+            js_api=api, width=800, height=600, hidden=True  # Start hidden
+        )
+    except Exception as e:
+        print("Error creating PyWebView window:", e)
+        traceback.print_exc()
 
 # Function to handle show/hide based on tray icon click
 def toggle_window():
-    minimized = api.get_minimized_state()
-    if minimized:
-        print("Showing window")  # Debug print
-        window.show()
-        api.set_minimized_state(False)
-    else:
-        print("Hiding window")  # Debug print
-        window.hide()
-        api.set_minimized_state(True)
+    try:
+        minimized = api.get_minimized_state()
+        if minimized:
+            print("Showing window")  # Debug print
+            window.show()
+            api.set_minimized_state(False)
+        else:
+            print("Hiding window")  # Debug print
+            window.hide()
+            api.set_minimized_state(True)
+    except Exception as e:
+        print("Error toggling window visibility:", e)
+        traceback.print_exc()
 
 # Function to exit the app cleanly
 def exit_app():
-    if window:
-        window.destroy()
-    os._exit(0)  # Stop the application completely
+    try:
+        if window:
+            window.destroy()
+        wx.CallAfter(wx.GetApp().ExitMainLoop)  # Properly exit wxPython app
+    except Exception as e:
+        print("Error exiting the application:", e)
+        traceback.print_exc()
 
-# Windows Tray Icon setup using win32api and win32gui
-def setup_tray_icon_win32():
-    def on_notify(hwnd, msg, wparam, lparam):
-        if lparam == win32con.WM_LBUTTONDBLCLK:
-            toggle_window()  # Trigger show/hide on double-click
-            return 0  # Return 0 explicitly after handling double-click
-        elif lparam == win32con.WM_RBUTTONUP:
-            # Show context menu on right-click
-            menu = win32gui.CreatePopupMenu()
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1023, "Show/Hide")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1024, "Exit")
+# wxPython App and TaskBarIcon for System Tray
+def setup_tray_icon_wx(app):
+    try:
+        class TaskBarIcon(wx.adv.TaskBarIcon):
+            TBMENU_SHOW_HIDE = wx.NewIdRef()
+            TBMENU_EXIT = wx.NewIdRef()
 
-            pos = win32gui.GetCursorPos()
-            print(f"Right-click detected. Cursor position: {pos}")  # Debug print
-            win32gui.SetForegroundWindow(hwnd)  # Bring tray icon to the foreground
+            def __init__(self, frame):
+                super(TaskBarIcon, self).__init__()
+                self.frame = frame
 
-            # TrackPopupMenu with additional focus handling
-            result = win32gui.TrackPopupMenu(menu, win32con.TPM_LEFTALIGN | win32con.TPM_RETURNCMD | win32con.TPM_RIGHTBUTTON, pos[0], pos[1], 0, hwnd, None)
-            print(f"TrackPopupMenu result: {result}")  # Debug print
-            if result == 1023:
-                toggle_window()
-            elif result == 1024:
-                exit_app()
-            win32gui.PostMessage(hwnd, win32con.WM_NULL, 0, 0)
-            win32gui.DestroyMenu(menu)  # Clean up menu after use
-            return 0  # Return 0 after handling right-click menu
+                try:
+                    # Set the icon
+                    icon = wx.Icon(ICON_PATH, wx.BITMAP_TYPE_ICO)
+                    self.SetIcon(icon, "ScoBro Snips")
+                except Exception as e:
+                    print("Error setting tray icon:", e)
+                    traceback.print_exc()
 
-        return 0  # Ensure 0 is returned by default
+                # Bind events
+                self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.on_left_double_click)
+                self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.on_right_click)
 
-    # Load icon
-    wc = win32gui.WNDCLASS()
-    wc.hInstance = win32api.GetModuleHandle(None)
-    wc.lpszClassName = "TrayIconClass"
-    wc.lpfnWndProc = on_notify  # Assign the notification handler
-    class_atom = win32gui.RegisterClass(wc)
-    hwnd = win32gui.CreateWindow(class_atom, "TrayIconWindow", 0, 0, 0, 0, 0, 0, 0, 0, None)
+            def CreatePopupMenu(self):
+                try:
+                    menu = wx.Menu()
+                    menu.Append(self.TBMENU_SHOW_HIDE, "Show/Hide")
+                    menu.AppendSeparator()
+                    menu.Append(self.TBMENU_EXIT, "Exit")
 
-    # Add the icon to the system tray
-    icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
-    hicon = win32gui.LoadImage(0, ICON_PATH, win32con.IMAGE_ICON, 0, 0, icon_flags)
-    nid = (hwnd, 0, win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP, win32con.WM_USER + 20, hicon, "ScoBro Snips")
-    win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, nid)
+                    # Bind menu events
+                    self.Bind(wx.EVT_MENU, self.on_toggle_window, id=self.TBMENU_SHOW_HIDE)
+                    self.Bind(wx.EVT_MENU, self.on_exit, id=self.TBMENU_EXIT)
+                    return menu
+                except Exception as e:
+                    print("Error creating popup menu:", e)
+                    traceback.print_exc()
 
-    win32gui.PumpMessages()  # Start the message loop for tray icon
+            def on_left_double_click(self, event):
+                try:
+                    self.on_toggle_window(event)
+                except Exception as e:
+                    print("Error handling left double-click:", e)
+                    traceback.print_exc()
+
+            def on_right_click(self, event):
+                try:
+                    self.PopupMenu(self.CreatePopupMenu())
+                except Exception as e:
+                    print("Error handling right-click:", e)
+                    traceback.print_exc()
+
+            def on_toggle_window(self, event):
+                try:
+                    toggle_window()
+                except Exception as e:
+                    print("Error toggling window from tray icon:", e)
+                    traceback.print_exc()
+
+            def on_exit(self, event):
+                try:
+                    exit_app()
+                except Exception as e:
+                    print("Error exiting from tray icon:", e)
+                    traceback.print_exc()
+
+        frame = wx.Frame(None)
+        TaskBarIcon(frame)
+    except Exception as e:
+        print("Error setting up tray icon:", e)
+        traceback.print_exc()
 
 # Run the application
 if __name__ == "__main__":
-    # Start the local server in a separate thread
-    server_thread = threading.Thread(target=start_server)
-    server_thread.daemon = True
-    server_thread.start()
+    try:
+        # Start the local server in a separate thread
+        server_thread = threading.Thread(target=start_server)
+        server_thread.daemon = True
+        server_thread.start()
 
-    # Set up and start the win32 tray icon in a separate thread
-    tray_thread_win32 = threading.Thread(target=setup_tray_icon_win32)
-    tray_thread_win32.daemon = True
-    tray_thread_win32.start()
+        # Initialize wx App and set up the tray icon
+        app = wx.App(False)
+        setup_tray_icon_wx(app)
 
-    # Create the PyWebView window, initially hidden
-    create_window()
-    webview.start()
+        # Create the PyWebView window, initially hidden
+        create_window()
+
+        # Start the PyWebView loop on the main thread
+        webview.start(gui='wx')
+
+        # Start the wx main loop after webview is up
+        app.MainLoop()
+    except Exception as e:
+        print("Error running the main application:", e)
+        traceback.print_exc()
