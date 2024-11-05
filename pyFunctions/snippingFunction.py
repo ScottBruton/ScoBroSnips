@@ -6,6 +6,11 @@ from PIL import ImageGrab
 import eel
 import threading
 import tkinter as tk
+from pyFunctions.appStateFunctions import update_captured_image
+import base64
+from io import BytesIO
+
+
 
 # Set DPI awareness to handle high DPI scaling
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -55,6 +60,8 @@ def select_area():
     root.mainloop()
 
 # Capture the selected area and convert it to OpenCV format
+
+
 def capture_selected_area(x1, y1, x2, y2):
     # Ensure the coordinates are in the correct order
     x1, x2 = min(x1, x2), max(x1, x2)
@@ -65,15 +72,22 @@ def capture_selected_area(x1, y1, x2, y2):
 
     # Grab the selected screen area
     image = ImageGrab.grab(bbox=(x1, y1, x2, y2)).convert("RGBA")
-    original_snippet_image = ImageGrab.grab(bbox=(x1, y1, x2, y2)).convert("RGBA")
+    global original_snippet_image
+    original_snippet_image = image
 
     # Convert the image to an OpenCV format
     open_cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGBA2BGR)
     global original_image
     original_image = open_cv_image.copy()
 
-    # Pass the image to the web view
-    eel.show_snipped_image(np.array(image))
+    # Convert image to base64 data URL
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    image_data = "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode()
+
+    print("Calling displaySnippedImage with image data...")
+    time.sleep(1)
+    eel.displaySnippedImage(image_data)
 
 # Eel function to call the snipping tool
 def start_snipping_tool():

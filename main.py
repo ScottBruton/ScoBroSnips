@@ -1,12 +1,44 @@
+import eel 
 import webview
 import threading
 import http.server
 import socketserver
+import shutil 
 import os
 import wx
 import wx.adv
 import traceback
 from PIL import Image
+import keyboard
+from pyFunctions.snippingFunction import start_snipping_tool
+from pathlib import Path  
+
+# Automatically find and copy eel.js to the project directory
+def ensure_eel_js_exists():
+    # Locate the original eel.js
+    eel_js_source = Path(eel.__file__).parent / 'eel.js'
+    eel_js_target = Path('.') / 'eel.js'
+    
+    # Copy eel.js to the project directory if it doesn't exist
+    if not eel_js_target.exists():
+        try:
+            shutil.copy(eel_js_source, eel_js_target)
+            print("Copied eel.js to project directory.")
+        except Exception as e:
+            print("Error copying eel.js:", e)
+            traceback.print_exc()
+
+# Call this function before starting the server to ensure eel.js is in the right place
+ensure_eel_js_exists()
+
+
+# Initialize Eel with the folder containing your HTML files
+eel.init(".")  # Replace "web" with the folder where your HTML files are located
+
+
+# Function to listen for the hotkey
+def hotkey_listener():
+    keyboard.add_hotkey('ctrl+alt+s', start_snipping_tool)
 
 # Automatically find the directory where this script is located
 try:
@@ -185,6 +217,7 @@ def setup_tray_icon_wx(app):
         traceback.print_exc()
 
 # Run the application
+# Run the application
 if __name__ == "__main__":
     try:
         # Start the local server in a separate thread
@@ -192,18 +225,25 @@ if __name__ == "__main__":
         server_thread.daemon = True
         server_thread.start()
 
+        # Start hotkey listener in a separate thread
+        hotkey_thread = threading.Thread(target=hotkey_listener)
+        hotkey_thread.daemon = True
+        hotkey_thread.start()
+
         # Initialize wx App and set up the tray icon
         app = wx.App(False)
         setup_tray_icon_wx(app)
 
-        # Create the PyWebView window, initially hidden
+        # Create the PyWebView window with debugging enabled
         create_window()
 
-        # Start the PyWebView loop on the main thread
-        webview.start(gui='wx')
+        # Start the PyWebView loop on the main thread with debugging
+        webview.start(debug=True, gui='wx')
 
         # Start the wx main loop after webview is up
         app.MainLoop()
+
     except Exception as e:
         print("Error running the main application:", e)
         traceback.print_exc()
+
