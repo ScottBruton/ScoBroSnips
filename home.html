@@ -1,50 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ScoBro Snips</title>
-    <link rel="stylesheet" href="Styles/homeStyle.css">
-    <link rel="stylesheet" href="Styles/rightPanelStyle.css">
-    <script src="eel.js"></script> <!-- Ensure eel.js is in the root project directory -->
-</head>
-<body>
+    <link rel="stylesheet" href="Styles/homeStyle.css" />
+    <link rel="stylesheet" href="Styles/rightPanelStyle.css" />
+    <script src="eel.js"></script>
+
+    <!-- Ensure eel.js is in the root project directory -->
+  </head>
+  <body>
     <!-- Title bar outside the main container -->
     <div class="container">
-        <!-- Left Sidebar with Buttons -->
-        <div class="sidebar">
-            <button id="extractButton" class="icon-button">
-                <img src="Media/icons/icn_extract.svg" alt="Extract">
-                Extract Objects
-            </button>
-            <button id="copyImageButton" class="icon-button">
-                <img src="Media/icons/icn_copyImage.svg" alt="Copy Image">
-                Copy Image
-            </button>
-            <button id="selectButton" class="icon-button">
-                <img src="Media/icons/icn_selectObjects.svg" alt="Select">
-                Select
-            </button>
-            <button id="selectAllButton" class="icon-button">
-                <img src="Media/icons/icn_selectAllObjects.svg" alt="Select All">
-                Select All
-            </button>
-            <button id="copyObjectButton" class="icon-button">
-                <img src="Media/icons/icn_copyObject.svg" alt="Copy Object">
-                Copy Object
-            </button>
-        </div>
+      <!-- Left Sidebar with Buttons -->
+      <div class="sidebar">
+        <button id="extractButton" class="icon-button">
+          <img src="Media/icons/icn_extract.svg" alt="Extract" />
+          Extract Objects
+        </button>
+        <button id="copyImageButton" class="icon-button">
+          <img src="Media/icons/icn_copyImage.svg" alt="Copy Image" />
+          Copy Image
+        </button>
+        <button id="selectButton" class="icon-button">
+          <img src="Media/icons/icn_selectObjects.svg" alt="Select" />
+          Select
+        </button>
+        <button id="selectAllButton" class="icon-button">
+          <img src="Media/icons/icn_selectAllObjects.svg" alt="Select All" />
+          Select All
+        </button>
+        <button id="copyObjectButton" class="icon-button">
+          <img src="Media/icons/icn_copyObject.svg" alt="Copy Object" />
+          Copy Object
+        </button>
+      </div>
 
-        <!-- Main content area -->
-        <div class="content" id="mainContent"></div>
-
-        <!-- Right Panel for Tools -->
-        <div class="right-panel" id="rightPanel">
-            <div class="center-title">ScoBro Snips</div>
-            <div class="slider-container">
-                <!-- JavaScript will dynamically insert the slider here -->
-            </div>
+      <!-- Main content area -->
+      <div class="content" id="mainContent">
+        <!-- Placeholder for snipped image -->
+        <div id="snippedImageContainer">
+          <img
+            id="snippedImage"
+            src=""
+            alt="Snipped image will appear here"
+            style="display: none"
+          />
         </div>
+      </div>
+
+      <!-- Right Panel for Tools -->
+      <div class="right-panel" id="rightPanel">
+        <div class="center-title">ScoBro Snips</div>
+        <div class="slider-container">
+          <!-- JavaScript will dynamically insert the slider here -->
+        </div>
+      </div>
     </div>
 
     <!-- JavaScript files -->
@@ -57,5 +69,5 @@
     <script src="Scripts/main.js" type="module"></script>
     <script src="Scripts/rightPanel.js" type="module"></script>
     <script src="Scripts/home.js" type="module"></script>
-</body>
+  </body>
 </html>

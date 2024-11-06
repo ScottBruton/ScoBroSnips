@@ -10,16 +10,17 @@ import wx.adv
 import traceback
 from PIL import Image
 import keyboard
-from pyFunctions.snippingFunction import start_snipping_tool
+from pyFunctions.snippingFunction import snipping_tool_function
+from pyFunctions.appStateFunctions import save_captured_image, get_captured_image
 from pathlib import Path  
 
-# Automatically find and copy eel.js to the project directory
+# Initialize Eel with the directory containing HTML files
+eel.init(".")  # Assuming the HTML files are in the root directory
+
+# Ensure eel.js is available in the project directory
 def ensure_eel_js_exists():
-    # Locate the original eel.js
     eel_js_source = Path(eel.__file__).parent / 'eel.js'
     eel_js_target = Path('.') / 'eel.js'
-    
-    # Copy eel.js to the project directory if it doesn't exist
     if not eel_js_target.exists():
         try:
             shutil.copy(eel_js_source, eel_js_target)
@@ -28,17 +29,28 @@ def ensure_eel_js_exists():
             print("Error copying eel.js:", e)
             traceback.print_exc()
 
-# Call this function before starting the server to ensure eel.js is in the right place
 ensure_eel_js_exists()
 
+# Function to handle snipping tool hotkey event
+def on_snipping_hotkey():
+    snipped_image = snipping_tool_function()
+    if snipped_image is None:
+        print("Error: No image captured.")
+        return
+    save_captured_image(snipped_image)
+    eel.show_snipped_image()()  # Calls JavaScript function in home.js
 
-# Initialize Eel with the folder containing your HTML files
-eel.init(".")  # Replace "web" with the folder where your HTML files are located
+@eel.expose
+def get_snipped_image_data():
+    return get_captured_image()
 
+@eel.expose
+def test_function():
+    print("test_function called from JavaScript")
 
 # Function to listen for the hotkey
 def hotkey_listener():
-    keyboard.add_hotkey('ctrl+alt+s', start_snipping_tool)
+    keyboard.add_hotkey('ctrl+alt+s', on_snipping_hotkey)
 
 # Automatically find the directory where this script is located
 try:
@@ -55,35 +67,20 @@ PORT = 8000
 # Define the path to the tray icon
 ICON_PATH = os.path.join(BASE_DIR, "Media", "icons", "trayIcon.ico")
 
-# Python function to be exposed to JavaScript
+# Define an API for PyWebView to use
 class API:
     def __init__(self):
-        self.minimizedToTray = True  # Start minimized by default
+        self.minimizedToTray = True
 
     def my_python_function(self, value):
-        try:
-            print(f"Python function called with value: {value}")
-            return f"Hello from Python! Received value: {value}"
-        except Exception as e:
-            print("Error in my_python_function:", e)
-            traceback.print_exc()
+        print(f"Python function called with value: {value}")
+        return f"Hello from Python! Received value: {value}"
 
     def set_minimized_state(self, minimized):
-        """Updates the minimizedToTray state."""
-        try:
-            self.minimizedToTray = minimized
-        except Exception as e:
-            print("Error setting minimized state:", e)
-            traceback.print_exc()
+        self.minimizedToTray = minimized
 
     def get_minimized_state(self):
-        """Returns the current minimized state."""
-        try:
-            return self.minimizedToTray
-        except Exception as e:
-            print("Error getting minimized state:", e)
-            traceback.print_exc()
-            return True
+        return self.minimizedToTray
 
 api = API()
 
@@ -123,11 +120,11 @@ def toggle_window():
     try:
         minimized = api.get_minimized_state()
         if minimized:
-            print("Showing window")  # Debug print
+            print("Showing window")
             window.show()
             api.set_minimized_state(False)
         else:
-            print("Hiding window")  # Debug print
+            print("Hiding window")
             window.hide()
             api.set_minimized_state(True)
     except Exception as e:
@@ -136,96 +133,64 @@ def toggle_window():
 
 # Function to exit the app cleanly
 def exit_app():
-    try:
-        if window:
-            window.destroy()
-        wx.CallAfter(wx.GetApp().ExitMainLoop)  # Properly exit wxPython app
-    except Exception as e:
-        print("Error exiting the application:", e)
-        traceback.print_exc()
+    if window:
+        window.destroy()
+    wx.CallAfter(wx.GetApp().ExitMainLoop)
 
 # wxPython App and TaskBarIcon for System Tray
 def setup_tray_icon_wx(app):
-    try:
-        class TaskBarIcon(wx.adv.TaskBarIcon):
-            TBMENU_SHOW_HIDE = wx.NewIdRef()
-            TBMENU_EXIT = wx.NewIdRef()
+    class TaskBarIcon(wx.adv.TaskBarIcon):
+        TBMENU_SHOW_HIDE = wx.NewIdRef()
+        TBMENU_EXIT = wx.NewIdRef()
 
-            def __init__(self, frame):
-                super(TaskBarIcon, self).__init__()
-                self.frame = frame
+        def __init__(self, frame):
+            super(TaskBarIcon, self).__init__()
+            self.frame = frame
+            try:
+                # Set the icon
+                icon = wx.Icon(ICON_PATH, wx.BITMAP_TYPE_ICO)
+                self.SetIcon(icon, "ScoBro Snips")
+            except Exception as e:
+                print("Error setting tray icon:", e)
+                traceback.print_exc()
 
-                try:
-                    # Set the icon
-                    icon = wx.Icon(ICON_PATH, wx.BITMAP_TYPE_ICO)
-                    self.SetIcon(icon, "ScoBro Snips")
-                except Exception as e:
-                    print("Error setting tray icon:", e)
-                    traceback.print_exc()
+            # Bind events
+            self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.on_left_double_click)
+            self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.on_right_click)
 
-                # Bind events
-                self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.on_left_double_click)
-                self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.on_right_click)
+        def CreatePopupMenu(self):
+            menu = wx.Menu()
+            menu.Append(self.TBMENU_SHOW_HIDE, "Show/Hide")
+            menu.AppendSeparator()
+            menu.Append(self.TBMENU_EXIT, "Exit")
+            self.Bind(wx.EVT_MENU, self.on_toggle_window, id=self.TBMENU_SHOW_HIDE)
+            self.Bind(wx.EVT_MENU, self.on_exit, id=self.TBMENU_EXIT)
+            return menu
 
-            def CreatePopupMenu(self):
-                try:
-                    menu = wx.Menu()
-                    menu.Append(self.TBMENU_SHOW_HIDE, "Show/Hide")
-                    menu.AppendSeparator()
-                    menu.Append(self.TBMENU_EXIT, "Exit")
+        def on_left_double_click(self, event):
+            self.on_toggle_window(event)
 
-                    # Bind menu events
-                    self.Bind(wx.EVT_MENU, self.on_toggle_window, id=self.TBMENU_SHOW_HIDE)
-                    self.Bind(wx.EVT_MENU, self.on_exit, id=self.TBMENU_EXIT)
-                    return menu
-                except Exception as e:
-                    print("Error creating popup menu:", e)
-                    traceback.print_exc()
+        def on_right_click(self, event):
+            self.PopupMenu(self.CreatePopupMenu())
 
-            def on_left_double_click(self, event):
-                try:
-                    self.on_toggle_window(event)
-                except Exception as e:
-                    print("Error handling left double-click:", e)
-                    traceback.print_exc()
+        def on_toggle_window(self, event):
+            toggle_window()
 
-            def on_right_click(self, event):
-                try:
-                    self.PopupMenu(self.CreatePopupMenu())
-                except Exception as e:
-                    print("Error handling right-click:", e)
-                    traceback.print_exc()
+        def on_exit(self, event):
+            exit_app()
 
-            def on_toggle_window(self, event):
-                try:
-                    toggle_window()
-                except Exception as e:
-                    print("Error toggling window from tray icon:", e)
-                    traceback.print_exc()
+    frame = wx.Frame(None)
+    TaskBarIcon(frame)
 
-            def on_exit(self, event):
-                try:
-                    exit_app()
-                except Exception as e:
-                    print("Error exiting from tray icon:", e)
-                    traceback.print_exc()
-
-        frame = wx.Frame(None)
-        TaskBarIcon(frame)
-    except Exception as e:
-        print("Error setting up tray icon:", e)
-        traceback.print_exc()
-
-# Run the application
-# Run the application
+# Main application setup
 if __name__ == "__main__":
     try:
-        # Start the local server in a separate thread
+        # Start local server thread
         server_thread = threading.Thread(target=start_server)
         server_thread.daemon = True
         server_thread.start()
 
-        # Start hotkey listener in a separate thread
+        # Start hotkey listener thread
         hotkey_thread = threading.Thread(target=hotkey_listener)
         hotkey_thread.daemon = True
         hotkey_thread.start()
@@ -246,4 +211,3 @@ if __name__ == "__main__":
     except Exception as e:
         print("Error running the main application:", e)
         traceback.print_exc()
-

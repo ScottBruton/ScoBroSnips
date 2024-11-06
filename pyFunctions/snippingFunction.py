@@ -6,11 +6,9 @@ from PIL import ImageGrab
 import eel
 import threading
 import tkinter as tk
-from pyFunctions.appStateFunctions import update_captured_image
+from pyFunctions.appStateFunctions import save_captured_image
 import base64
 from io import BytesIO
-
-
 
 # Set DPI awareness to handle high DPI scaling
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -60,39 +58,44 @@ def select_area():
     root.mainloop()
 
 # Capture the selected area and convert it to OpenCV format
-
-
 def capture_selected_area(x1, y1, x2, y2):
-    # Ensure the coordinates are in the correct order
+    # Ensure coordinates are in the correct order
     x1, x2 = min(x1, x2), max(x1, x2)
     y1, y2 = min(y1, y2), max(y1, y2)
 
-    # Add a small delay to ensure the screen is properly updated before capture
+    # Add a small delay to ensure the screen is ready
     time.sleep(0.2)
 
-    # Grab the selected screen area
-    image = ImageGrab.grab(bbox=(x1, y1, x2, y2)).convert("RGBA")
+    # Attempt to grab the selected screen area
+    image = ImageGrab.grab(bbox=(x1, y1, x2, y2))
+    if image is None:
+        print("Error: Failed to capture the screen area.")
+        return None
+
+    # Convert the image to RGBA for consistency
+    image = image.convert("RGBA")
     global original_snippet_image
     original_snippet_image = image
 
-    # Convert the image to an OpenCV format
-    open_cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGBA2BGR)
-    global original_image
-    original_image = open_cv_image.copy()
+    # Call save_captured_image to store the image in base64
+    save_captured_image (image)  # Update the application state
 
-    # Convert image to base64 data URL
+    # Convert image to base64 for display
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     image_data = "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode()
 
-    print("Calling displaySnippedImage with image data...")
-    time.sleep(1)
-    eel.displaySnippedImage(image_data)
+    # Attempt to display the image in the front end
+    try:
+        print("here")
+        eel.displaySnippedImage(image_data)()  # Call JavaScript function
+    except AttributeError:
+        print("Error: 'displaySnippedImage' function not found in JavaScript.")
 
-# Eel function to call the snipping tool
+# Eel function to start the snipping tool
 def start_snipping_tool():
     threading.Thread(target=select_area, daemon=True).start()
 
 # External function to trigger the snipping tool
-def trigger_snipping_tool():
+def snipping_tool_function():
     start_snipping_tool()
